@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "li_ad"
+version = "0.0.1"
+description = "Admin for the CH_LIRAG retrieval engine"
+requires-python = ">=3.10"
+readme = "CLAUDE.md"
+
+[tool.setuptools.packages.find]
+include = ["admin*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra"

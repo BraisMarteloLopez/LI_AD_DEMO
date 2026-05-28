@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ c.name }} · Chunks - LI_AD{% endblock %}
+{% block content %}
+{% include "collections/_header.html" %}
+
+{% with current="chunks" %}{% include "collections/_tabs.html" %}{% endwith %}
+
+<div class="chunks-toolbar">
+  <form method="get" class="chunks-filter" id="chunks-filter-form">
+    <label for="source-filter">Source</label>
+    <select id="source-filter" name="source_file"
+            onchange="document.getElementById('chunks-filter-form').submit()">
+      <option value="">All files</option>
+      {% for s in sources %}
+      <option value="{{ s }}" {% if s == selected_source %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% if chunks %}
+  <span class="muted tabular">
+    {{ chunks|length }} chunk{{ '' if chunks|length == 1 else 's' }} · {{ tokens_total }} tokens
+  </span>
+  {% endif %}
+</div>
+
+{% if chunks %}
+<table class="chunks-table">
+  <thead>
+    <tr>
+      <th>Source</th>
+      <th style="width:1%;white-space:nowrap">Pages</th>
+      <th style="width:1%;white-space:nowrap">Types</th>
+      <th style="width:1%;text-align:right">Tokens</th>
+      <th>Text</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for chunk in chunks %}
+    <tr class="chunk-row" data-chunk-row tabindex="0"
+        aria-controls="chunk-detail-{{ loop.index }}" aria-expanded="false">
+      <td><code class="chunk-source">{{ chunk.source_file|stripext }}</code></td>
+      <td class="tabular">{{ chunk.page_label }}</td>
+      <td class="chunk-types">
+        {% for t, n in chunk.block_types_display %}<span class="block-type">{{ t }}{% if n > 1 %} ×{{ n }}{% endif %}</span>{% endfor %}
+      </td>
+      <td class="tabular" style="text-align:right">{{ chunk.token_count }}</td>
+      <td><span class="chunk-snippet">{{ chunk.text_snippet() }}</span></td>
+    </tr>
+    <tr class="chunk-detail" id="chunk-detail-{{ loop.index }}" hidden>
+      <td colspan="5">
+        <div class="chunk-detail-meta">
+          <code>{{ chunk.chunk_id }}</code>
+          <span>·</span>
+          <span>{{ chunk.source_file }}</span>
+          <span>·</span>
+          <span>page{{ '' if chunk.page_start == chunk.page_end else 's' }} {{ chunk.page_label }}</span>
+          <span>·</span>
+          <span>{{ chunk.token_count }} tokens</span>
+        </div>
+        <pre class="chunk-text">{{ chunk.text }}</pre>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state card">
+  {% if selected_source %}
+  <p>No chunks for <code>{{ selected_source }}</code>.</p>
+  <p class="muted">Try clearing the filter or run ingestion on that file from the
+    <a href="/collections/{{ c.id }}">Overview</a> tab.</p>
+  {% else %}
+  <p>No chunks yet.</p>
+  <p class="muted">Run ingestion from the <a href="/collections/{{ c.id }}">Overview</a> tab.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

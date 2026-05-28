@@ -1,0 +1,128 @@
+{#
+  Reusable drag-and-drop PDF dropzone.
+  Params:
+    id         unique DOM id for this dropzone instance
+    name       name of the multipart field (e.g. "files")
+    min        minimum files required to enable submit (default 1)
+    submit_id  DOM id of the submit button to toggle enable/disable
+    label      short title inside the box
+    hint       secondary hint text
+#}
+<div class="dz{% if compact %} dz-compact{% endif %}" id="{{ id }}"
+     tabindex="0" role="button"
+     aria-label="Drop PDFs here or press Enter to browse">
+  <div class="dz-icon">+</div>
+  <div class="dz-text">
+    <div class="dz-title">{{ label|default("Drop PDFs here") }}</div>
+    <div class="dz-sub">{{ hint|default("or click to browse — PDF only, multiple files allowed") }}</div>
+  </div>
+  <input class="dz-input" type="file" name="{{ name }}"
+         multiple accept="application/pdf,.pdf">
+</div>
+<div class="dz-list" id="{{ id }}-list" aria-live="polite"></div>
+<div class="dz-msg" id="{{ id }}-msg"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const dz = document.getElementById("{{ id }}");
+  const input = dz.querySelector(".dz-input");
+  const listEl = document.getElementById("{{ id }}-list");
+  const msgEl = document.getElementById("{{ id }}-msg");
+  const submitBtn = {% if submit_id %}document.getElementById("{{ submit_id }}"){% else %}null{% endif %};
+  const minFiles = {{ min|default(1) }};
+  const PDF_MIME = "application/pdf";
+
+  const files = new Map();
+
+  function human(size) {
+    if (size < 1024) return size + " B";
+    if (size < 1024*1024) return (size/1024).toFixed(1) + " KB";
+    return (size/1024/1024).toFixed(1) + " MB";
+  }
+
+  function isPdf(f) {
+    if (f.type === PDF_MIME) return true;
+    return /\.pdf$/i.test(f.name);
+  }
+
+  function sync() {
+    const dt = new DataTransfer();
+    for (const f of files.values()) dt.items.add(f);
+    input.files = dt.files;
+    render();
+    if (submitBtn) submitBtn.disabled = files.size < minFiles;
+    updateSubmitLabel();
+  }
+
+  function updateSubmitLabel() {
+    if (!submitBtn) return;
+    const base = submitBtn.dataset.baseLabel || submitBtn.textContent.trim();
+    submitBtn.dataset.baseLabel = base;
+    submitBtn.textContent = files.size > 0 ? `${base} (${files.size})` : base;
+  }
+
+  function render() {
+    listEl.innerHTML = "";
+    for (const [key, f] of files) {
+      const row = document.createElement("div");
+      row.className = "dz-item";
+      row.innerHTML = `
+        <span class="dz-icon" style="width:28px;height:28px;font-size:14px">PDF</span>
+        <span class="dz-item-name"></span>
+        <span class="dz-item-size"></span>
+        <button type="button" class="dz-remove" aria-label="Remove">&times;</button>
+      `;
+      row.querySelector(".dz-item-name").textContent = f.name;
+      row.querySelector(".dz-item-size").textContent = human(f.size);
+      row.querySelector(".dz-remove").addEventListener("click", () => {
+        files.delete(key);
+        sync();
+      });
+      listEl.appendChild(row);
+    }
+  }
+
+  function add(incoming) {
+    let accepted = 0, rejected = 0;
+    for (const f of incoming) {
+      if (!isPdf(f)) { rejected++; continue; }
+      files.set(f.name, f);
+      accepted++;
+    }
+    if (rejected > 0) {
+      msgEl.textContent = `Skipped ${rejected} non-PDF file${rejected===1?"":"s"}.`;
+      msgEl.className = "dz-msg err";
+    } else if (accepted > 0) {
+      msgEl.textContent = `${files.size} file${files.size===1?"":"s"} ready.`;
+      msgEl.className = "dz-msg ok";
+    }
+    sync();
+  }
+
+  dz.addEventListener("click", () => input.click());
+  dz.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); }
+  });
+  input.addEventListener("change", () => {
+    add(Array.from(input.files));
+  });
+  ["dragenter","dragover"].forEach(ev =>
+    dz.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.add("is-drag");
+    })
+  );
+  ["dragleave","drop"].forEach(ev =>
+    dz.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.remove("is-drag");
+    })
+  );
+  dz.addEventListener("drop", (e) => {
+    const dtf = e.dataTransfer && e.dataTransfer.files;
+    if (dtf && dtf.length) add(Array.from(dtf));
+  });
+
+  sync();
+});
+</script>

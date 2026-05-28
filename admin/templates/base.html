@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}LI_AD{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    :root {
+      /* === Color: neutral (cool zinc-blue) === */
+      --bg:            #F4F6F9;
+      --surface:       #FFFFFF;
+      --surface-2:     #ECEFF4;
+      --border:        #D9DEE7;
+      --border-strong: #A9B3C2;
+      --text:          #0F1A2E;
+      --text-muted:    #5C6675;
+      --text-disabled: #9099A8;
+
+      /* === Color: brand navy === */
+      --navy:       #1B2845;
+      --navy-hover: #2A3B66;
+      --navy-press: #142036;
+      --navy-tint:  rgba(27, 40, 69, .04);
+
+      /* === Color: cyan (interaction signal) === */
+      --cyan:        #06B6D4;
+      --cyan-strong: #0891B2;
+      --cyan-soft:   rgba(6, 182, 212, .30);
+      --cyan-bg:     #E6F7FA;
+
+      /* === Color: semantics (navy-tinted) === */
+      --success:    #1E8C5A;
+      --success-bg: #E5F2EB;
+      --warning:    #B97A00;
+      --warning-bg: #FAF1DC;
+      --danger:     #B0354A;
+      --danger-bg:  #F5E2E6;
+
+      /* === Typography === */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --text-xs:  11px;
+      --text-sm:  13px;
+      --text-md:  15px;
+      --text-lg:  18px;
+      --text-xl:  24px;
+      --text-2xl: 32px;
+
+      /* === Spacing (4px grid) === */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-6: 24px;
+      --space-8: 32px;
+
+      /* === Radius === */
+      --radius-sm: 4px;
+      --radius:    6px;
+      --radius-lg: 8px;
+
+      /* === Shadow === */
+      --shadow-flat:  0 1px 0 var(--border);
+      --shadow-pop:   0 4px 12px rgba(15, 26, 46, .08);
+      --shadow-focus: 0 0 0 3px var(--cyan-soft);
+
+      /* === Motion === */
+      --ease:     cubic-bezier(0.2, 0, 0, 1);
+      --dur-fast: 120ms;
+      --dur-base: 200ms;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: var(--font-sans);
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+    }
+
+    a { color: var(--navy); text-decoration: underline; text-underline-offset: 2px; }
+    a:hover { color: var(--navy-hover); }
+
+    /* === Header === */
+    header {
+      background: var(--text);
+      color: #E9ECF2;
+      padding: var(--space-3) var(--space-8);
+      display: flex; align-items: center; gap: var(--space-6);
+    }
+    header .brand {
+      font-weight: 600; letter-spacing: .02em;
+      color: #FFF; text-decoration: none;
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      font-size: var(--text-md);
+    }
+    /* Health dot — JS llena data-health con ok/error/down via fetch /health */
+    header .brand::before {
+      content: ""; width: 8px; height: 8px;
+      border-radius: 999px;
+      background: var(--text-muted);  /* default: aun no comprobado */
+      transition: background var(--dur-base) var(--ease);
+    }
+    header .brand[data-health="ok"]::before    { background: var(--success); }
+    header .brand[data-health="warn"]::before  { background: var(--warning); }
+    header .brand[data-health="error"]::before { background: var(--danger);  }
+    header .brand[data-health="down"]::before  { background: var(--danger);  }
+
+    header nav { display: flex; gap: var(--space-1); margin-left: auto; }
+    header nav a {
+      color: #A9B3C2; text-decoration: none;
+      padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm);
+      font-weight: 500; font-size: var(--text-sm);
+      transition: color var(--dur-fast) var(--ease),
+                  background var(--dur-fast) var(--ease);
+    }
+    header nav a:hover { color: #FFF; background: rgba(255,255,255,.06); }
+    header nav a.is-active {
+      color: #FFF;
+      text-decoration: underline;
+      text-decoration-color: var(--cyan);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 6px;
+    }
+
+    main {
+      padding: var(--space-8) var(--space-8) calc(var(--space-8) * 2);
+      max-width: 1280px; margin: 0 auto;
+    }
+
+    h1 {
+      font-size: var(--text-xl); margin: 0 0 var(--space-4);
+      letter-spacing: -.01em; line-height: 1.2; font-weight: 600;
+    }
+    h2 {
+      font-size: var(--text-lg); margin: var(--space-6) 0 var(--space-3);
+      color: var(--text); line-height: 1.2; font-weight: 600;
+    }
+    p { margin: var(--space-2) 0; }
+
+    /* === Table === */
+    table {
+      border-collapse: separate; border-spacing: 0;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-flat);
+      font-variant-numeric: tabular-nums;
+    }
+    th, td {
+      text-align: left;
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border);
+    }
+    tr:last-child td { border-bottom: none; }
+    th {
+      background: var(--surface-2);
+      font-weight: 600;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    tbody tr {
+      transition: background var(--dur-fast) var(--ease);
+    }
+    tbody tr:hover { background: var(--navy-tint); }
+
+    /* Variant: tabla de ficheros (mas densa) */
+    .files-table td, .files-table th { padding: 6px var(--space-3); }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: var(--space-1);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer; text-decoration: none;
+      font-family: inherit;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      transition: background var(--dur-fast) var(--ease),
+                  border-color var(--dur-fast) var(--ease),
+                  color var(--dur-fast) var(--ease),
+                  transform 20ms var(--ease);
+    }
+    .btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+    .btn:active { transform: translateY(1px); }
+    .btn:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 1px;
+      box-shadow: var(--shadow-focus);
+    }
+    /* Disabled (no busy): neutral plano, ignora la variante (primary/danger).
+       Un boton no accionable no debe leer como "fuerte pero apagado", debe
+       leer como "no toca ahora". El estado .is-busy mantiene su variante
+       (primary sigue navy mientras el spinner esta girando). */
+    .btn:disabled:not(.is-busy),
+    .btn:disabled:not(.is-busy):hover {
+      background: var(--surface-2);
+      color: var(--text-disabled);
+      border-color: var(--border);
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn.is-busy:disabled { cursor: progress; }
+    .btn.is-busy { cursor: progress; opacity: .9; }
+    .btn.is-busy::before {
+      content: ""; display: inline-block; width: 12px; height: 12px;
+      border: 2px solid currentColor; border-right-color: transparent;
+      border-radius: 999px; margin-right: var(--space-2); vertical-align: -2px;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn-primary {
+      background: var(--navy); color: #FFF; border-color: var(--navy);
+    }
+    .btn-primary:hover {
+      background: var(--navy-hover); border-color: var(--navy-hover);
+    }
+    .btn-primary:active {
+      background: var(--navy-press); border-color: var(--navy-press);
+    }
+
+    .btn-danger {
+      background: var(--danger); color: #FFF; border-color: var(--danger);
+    }
+    .btn-danger:hover { background: #8E2A3B; border-color: #8E2A3B; }
+
+    .btn-ghost {
+      background: transparent; border-color: transparent; color: var(--text-muted);
+    }
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+
+    .btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+
+    /* Inline action helpers (Fase A: clases para quitar styles inline) */
+    .btn-retry { color: var(--cyan-strong); }
+    .btn-retry:hover { color: var(--cyan-strong); background: var(--cyan-bg); }
+    .btn-remove { color: var(--danger); }
+    .btn-remove:hover { color: var(--danger); background: var(--danger-bg); }
+
+    /* === Forms === */
+    form { margin: 0; }
+    label {
+      display: block; margin: var(--space-3) 0 var(--space-1);
+      font-weight: 600; font-size: var(--text-xs);
+      color: var(--text-muted);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    input[type=text], select, input[type=file] {
+      width: 100%; max-width: 420px;
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--surface);
+      font: inherit; font-size: var(--text-sm); color: var(--text);
+      transition: border-color var(--dur-fast) var(--ease),
+                  box-shadow var(--dur-fast) var(--ease);
+    }
+    input[type=text]:focus, select:focus {
+      outline: none; border-color: var(--cyan);
+      box-shadow: var(--shadow-focus);
+    }
+    ::placeholder { color: var(--text-disabled); }
+
+    /* === Layout helpers === */
+    .actions { margin-top: var(--space-6); display: flex; gap: var(--space-3); flex-wrap: wrap; }
+    .muted { color: var(--text-muted); font-size: var(--text-sm); }
+    /* tabular: numeric content nunca rompe linea (fechas, sizes, counts) */
+    .tabular { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-flat);
+    }
+    .stack > * + * { margin-top: var(--space-4); }
+
+    /* === Chips: tag (collection type), mime-tag, tag-state === */
+    .tag {
+      display: inline-block;
+      padding: 2px var(--space-2); font-size: var(--text-xs); font-weight: 600;
+      border-radius: var(--radius-sm);
+      background: var(--cyan-bg); color: var(--cyan-strong);
+      letter-spacing: .04em; text-transform: uppercase;
+      font-variant-numeric: tabular-nums;
+    }
+    .mime-tag {
+      display: inline-block;
+      padding: 2px var(--space-2); font-size: var(--text-xs); font-weight: 700;
+      border-radius: var(--radius-sm);
+      letter-spacing: .05em; text-transform: uppercase;
+    }
+    .tag-state {
+      background: var(--surface-2); color: var(--text-muted);
+    }
+
+    /* === Tabs (collection detail sections) === */
+    .tabs {
+      display: flex; gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin: var(--space-8) 0 var(--space-6);
+    }
+    .tab {
+      position: relative;
+      padding: 14px var(--space-6);
+      color: var(--text-muted); text-decoration: none;
+      font-size: var(--text-md); font-weight: 500;
+      letter-spacing: -.005em;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      transition: color var(--dur-fast) var(--ease),
+                  border-color var(--dur-fast) var(--ease),
+                  background var(--dur-fast) var(--ease);
+    }
+    /* Reserva ancho para la variante bold del activo — evita layout shift
+       al cambiar de pestaña. data-label se rellena en el partial. */
+    .tab::before {
+      content: attr(data-label);
+      display: block; height: 0; visibility: hidden;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .tab:hover { color: var(--text); background: var(--surface-2); }
+    .tab.is-active {
+      color: var(--text);
+      border-bottom-color: var(--cyan);
+      font-weight: 600;
+    }
+
+    /* === Chunks view === */
+    .chunks-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--space-4); margin-bottom: var(--space-4); flex-wrap: wrap;
+    }
+    .chunks-filter { display: inline-flex; align-items: center; gap: var(--space-3); }
+    .chunks-filter label { margin: 0; }
+    .chunks-filter select {
+      width: auto; max-width: none; min-width: 220px;
+    }
+    .chunks-table td, .chunks-table th { padding: 6px var(--space-3); }
+    .chunks-table td { vertical-align: top; }
+    .chunks-table .chunk-types { white-space: nowrap; }
+    .chunks-table .chunk-row { cursor: pointer; }
+    .chunks-table .chunk-row:focus-visible {
+      outline: 2px solid var(--cyan); outline-offset: -2px;
+    }
+    .chunks-table .chunk-row.is-expanded { background: var(--surface-2); }
+    .chunks-table .chunk-source { color: var(--text); }
+    .chunks-table .chunk-snippet { color: var(--text-muted); }
+    .chunks-table .chunk-row.is-expanded .chunk-snippet { color: var(--text); }
+    .block-type {
+      display: inline-block; padding: 1px 6px; margin-right: 2px;
+      background: var(--surface-2); color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs); font-weight: 500;
+      text-transform: lowercase; letter-spacing: 0;
+    }
+    .chunks-table .chunk-detail td {
+      background: var(--surface-2);
+      padding: var(--space-3) var(--space-4);
+    }
+    .chunk-detail-meta {
+      display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;
+      font-size: var(--text-xs); color: var(--text-muted);
+      margin-bottom: var(--space-2);
+      font-variant-numeric: tabular-nums;
+    }
+    .chunk-detail-meta code {
+      font-family: var(--font-mono);
+      background: var(--surface);
+      padding: 2px var(--space-2); border-radius: var(--radius-sm);
+      font-size: var(--text-xs); color: var(--text);
+    }
+    .chunk-text {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs); line-height: 1.6;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-3);
+      margin: 0;
+      max-height: 400px; overflow: auto;
+      white-space: pre-wrap; word-break: break-word;
+      color: var(--text);
+    }
+
+    .empty-state {
+      text-align: center; padding: var(--space-8) var(--space-6);
+    }
+    .empty-state p { margin: var(--space-2) 0; }
+
+    /* === Ingestion profile (collapsible panel en Overview) === */
+    .profile-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-top: var(--space-6);
+    }
+    .profile-panel summary {
+      list-style: none;
+      cursor: pointer;
+      padding: var(--space-3) var(--space-4);
+      display: flex; align-items: center; gap: var(--space-3);
+      font-size: var(--text-md); font-weight: 600;
+      color: var(--text); letter-spacing: -.005em;
+      user-select: none;
+      border-radius: var(--radius);
+      transition: background var(--dur-fast) var(--ease);
+    }
+    .profile-panel summary::-webkit-details-marker { display: none; }
+    .profile-panel summary::before {
+      content: "›";
+      font-size: 18px; line-height: 1;
+      color: var(--text-muted);
+      width: 12px; display: inline-block;
+      transition: transform var(--dur-fast) var(--ease);
+    }
+    .profile-panel[open] summary::before { transform: rotate(90deg); }
+    .profile-panel summary:hover { background: var(--surface-2); }
+    .profile-panel summary:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: -2px;
+    }
+    .profile-summary-text {
+      font-weight: 400; font-size: var(--text-sm);
+      color: var(--text-muted); letter-spacing: 0;
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+    }
+    .profile-panel-body {
+      padding: var(--space-4);
+      border-top: 1px solid var(--border);
+    }
+    .profile-rechunk {
+      margin-top: var(--space-6);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--border);
+    }
+
+    /* === Settings form (reusado dentro del profile-panel) === */
+    .settings-section {
+      /* Cuando vive dentro de .profile-panel-body, sin frame propio. */
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+    }
+    .settings-section + .settings-section {
+      margin-top: var(--space-6);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--border);
+    }
+    .settings-section h3 {
+      margin: 0 0 var(--space-4);
+      font-size: var(--text-md); font-weight: 600;
+      color: var(--text); letter-spacing: -.005em;
+    }
+    .settings-row + .settings-row {
+      margin-top: var(--space-4);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border);
+    }
+    .settings-toggle {
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      font-size: var(--text-sm); font-weight: 500;
+      color: var(--text); cursor: pointer; margin: 0;
+      text-transform: none; letter-spacing: 0;
+    }
+    .settings-toggle input[type="checkbox"] {
+      width: 16px; height: 16px; margin: 0;
+      accent-color: var(--cyan); cursor: pointer;
+    }
+    .settings-row .hint { margin: var(--space-1) 0 0 24px; }
+    .settings-threshold {
+      display: flex; align-items: center; gap: var(--space-3);
+      margin-top: var(--space-2); margin-left: 24px;
+    }
+    .settings-threshold label {
+      margin: 0; text-transform: none; letter-spacing: 0;
+      font-weight: 400; font-size: var(--text-xs); color: var(--text-muted);
+    }
+    .settings-threshold input[type="number"] {
+      max-width: 80px; padding: var(--space-1) var(--space-2);
+      font-variant-numeric: tabular-nums;
+    }
+    /* Cuando una settings-section no tiene checkbox padre (ej. Chunker)
+       los hints y thresholds caen flush al borde izquierdo, sin el
+       indent que existe para subordinarlos a un toggle. */
+    .settings-section.no-toggle .hint,
+    .settings-section.no-toggle .settings-threshold {
+      margin-left: 0;
+    }
+    .settings-form .actions { margin-top: var(--space-6); }
+
+    /* === Detail header === */
+    .breadcrumbs {
+      font-size: var(--text-xs); margin-bottom: var(--space-2);
+      color: var(--text-muted); letter-spacing: .04em;
+    }
+    .breadcrumbs a { color: var(--text-muted); text-decoration: none; }
+    .breadcrumbs a:hover { color: var(--text); text-decoration: underline; }
+    .breadcrumbs-sep {
+      color: var(--border-strong); margin: 0 var(--space-2);
+      font-weight: 400;
+    }
+    .breadcrumbs-current { color: var(--text); }
+
+    /* hint: texto auxiliar bajo un input/select */
+    .hint {
+      font-size: var(--text-xs); color: var(--text-muted);
+      margin: var(--space-1) 0 0; letter-spacing: 0;
+    }
+    .detail-head {
+      display: flex; align-items: center; gap: var(--space-3);
+      flex-wrap: wrap; margin-bottom: var(--space-1);
+    }
+    .detail-head h1 { margin: 0; }
+    .detail-head-main {
+      display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+    }
+    .detail-head > .btn { margin-left: auto; }
+    .detail-meta {
+      display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;
+      font-size: var(--text-xs); margin-bottom: var(--space-6);
+      color: var(--text-muted); font-variant-numeric: tabular-nums;
+    }
+    .detail-meta code {
+      font-family: var(--font-mono);
+      background: var(--surface-2);
+      padding: 2px var(--space-2); border-radius: var(--radius-sm);
+      font-size: var(--text-xs); color: var(--text);
+    }
+    .files-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--space-3); margin-top: var(--space-2);
+    }
+    .files-head h2 { margin: 0; }
+    .files-head-right {
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+
+    /* === Ingest badge === */
+    .ingest-badge {
+      display: inline-block;
+      padding: 2px var(--space-3);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      font-variant-numeric: tabular-nums;
+    }
+    .ingest-pending { background: var(--surface-2); color: var(--text-muted); }
+    .ingest-running { background: var(--cyan-bg); color: var(--cyan-strong); }
+    .ingest-running::before {
+      content: ""; display: inline-block; width: 6px; height: 6px;
+      border-radius: 999px; background: var(--cyan);
+      margin-right: var(--space-1); vertical-align: 1px;
+      animation: dot-pulse 1s ease-in-out infinite;
+    }
+    .ingest-done    { background: var(--success-bg); color: var(--success); }
+    .ingest-failed  { background: var(--danger-bg);  color: var(--danger); cursor: help; }
+    @keyframes dot-pulse {
+      0%, 100% { transform: scale(1);    opacity: 1;   }
+      50%      { transform: scale(1.55); opacity: .55; }
+    }
+
+    /* === Ingest panel === */
+    .ingest-panel { margin-top: var(--space-6); padding: var(--space-4) var(--space-6); }
+    .ingest-panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--space-3); margin-bottom: var(--space-3);
+    }
+    .ingest-panel-head h2 { margin: 0; }
+
+    .progress-bar {
+      display: flex; width: 100%; height: 6px;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .progress-mini { height: 4px; max-width: 140px; flex: 1; }
+    .ingest-summary {
+      display: inline-flex; align-items: center; gap: var(--space-3);
+      min-width: 220px; max-width: 360px;
+    }
+    .ingest-summary .ingest-badge { font-size: 10px; padding: 1px var(--space-2); }
+    .progress-bar > span { display: block; height: 100%; transition: width var(--dur-base) var(--ease); }
+    .progress-done    { background: var(--success); }
+    .progress-failed  { background: var(--danger); }
+    .progress-running {
+      background-color: var(--cyan);
+      background-image: linear-gradient(
+        135deg,
+        rgba(255,255,255,.45) 25%, transparent 25%,
+        transparent 50%, rgba(255,255,255,.45) 50%,
+        rgba(255,255,255,.45) 75%, transparent 75%, transparent
+      );
+      background-size: 22px 22px;
+      animation: progress-stripes .8s linear infinite,
+                 running-glow 1.6s ease-in-out infinite;
+      box-shadow: 0 0 10px rgba(6,182,212,.55);
+    }
+    @keyframes progress-stripes {
+      from { background-position: 0 0; }
+      to   { background-position: 22px 0; }
+    }
+    @keyframes running-glow {
+      50% { box-shadow: 0 0 18px rgba(6,182,212,.9); }
+    }
+
+    .ingest-stats {
+      display: flex; gap: var(--space-6); margin-top: var(--space-3);
+      font-size: var(--text-sm); flex-wrap: wrap;
+    }
+    .stat {
+      display: inline-flex; align-items: center; gap: var(--space-1);
+      color: var(--text-muted);
+    }
+    .stat::before {
+      content: ""; display: inline-block;
+      width: 8px; height: 8px; border-radius: 999px;
+      background: currentColor;
+    }
+    .stat b { color: var(--text); font-variant-numeric: tabular-nums; }
+    .stat[data-zero="true"] { opacity: .45; }
+    .stat-done    { color: var(--success); }
+    .stat-running { color: var(--cyan-strong); }
+    .stat-running[data-zero="false"]::before {
+      animation: dot-pulse 1s ease-in-out infinite;
+    }
+    .stat-pending { color: var(--text-muted); }
+    .stat-failed  { color: var(--danger); }
+
+    /* === Dropzone === */
+    .dz {
+      border: 2px dashed var(--border-strong);
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: var(--space-6) var(--space-6);
+      text-align: center; cursor: pointer;
+      transition: background var(--dur-fast) var(--ease),
+                  border-color var(--dur-fast) var(--ease),
+                  box-shadow var(--dur-fast) var(--ease);
+      max-width: 720px;
+    }
+    .dz.dz-compact {
+      padding: var(--space-3) var(--space-4); display: flex; align-items: center;
+      gap: var(--space-3); text-align: left;
+    }
+    .dz-compact .dz-icon { width: 32px; height: 32px; font-size: 16px;
+                           margin-bottom: 0; flex-shrink: 0; }
+    .dz-compact .dz-title { font-size: var(--text-sm); }
+    .dz-compact .dz-sub { font-size: var(--text-xs); margin-top: 2px; }
+    .dz-compact .dz-text { flex: 1; }
+    .dz:hover { background: var(--cyan-bg); border-color: var(--cyan); }
+    .dz:focus, .dz:focus-visible {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: var(--shadow-focus);
+    }
+    .dz.is-drag {
+      background: var(--cyan-bg); border-color: var(--cyan);
+      border-style: solid;
+      box-shadow: var(--shadow-pop);
+    }
+    .dz-title { font-weight: 600; font-size: var(--text-md); color: var(--text); }
+    .dz-sub { color: var(--text-muted); font-size: var(--text-sm); margin-top: var(--space-1); }
+    .dz-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      background: var(--cyan-bg); color: var(--cyan-strong);
+      margin-bottom: var(--space-2); font-size: 18px; font-weight: 700;
+    }
+    .dz-input { display: none; }
+    .dz-list { margin-top: var(--space-4); max-width: 720px; display: grid; gap: var(--space-2); }
+    .dz-item {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-2) var(--space-3); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--surface);
+    }
+    .dz-item-name {
+      font-weight: 500; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; flex: 1;
+    }
+    .dz-item-size {
+      color: var(--text-muted); font-size: var(--text-xs);
+      font-variant-numeric: tabular-nums;
+    }
+    .dz-remove {
+      border: none; background: transparent; color: var(--text-muted);
+      cursor: pointer; padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm); font-size: 16px; line-height: 1;
+    }
+    .dz-remove:hover { background: var(--danger-bg); color: var(--danger); }
+    .dz-msg {
+      margin-top: var(--space-3); font-size: var(--text-sm); min-height: 18px;
+    }
+    .dz-msg.ok { color: var(--success); }
+    .dz-msg.err { color: var(--danger); }
+
+    /* === Reduced motion === */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+      .progress-running {
+        animation: none;
+        background-image: none;
+        box-shadow: none;
+      }
+      .ingest-running::before { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="brand" data-health-dot title="Checking health…">LI_AD</a>
+    <nav>
+      <a href="/collections"
+         {% if request.url.path.startswith('/collections') %}class="is-active"{% endif %}>
+        Collections
+      </a>
+      <a href="/health"
+         {% if request.url.path == '/health' %}class="is-active"{% endif %}>
+        Health
+      </a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    // Forms marcados con un submit button que trae data-busy-label:
+    // al enviar, dejan el boton spinner + texto de espera hasta que el
+    // navegador deje la pagina. Evita doble-submit y comunica progreso.
+    document.addEventListener("submit", function(e) {
+      const form = e.target;
+      const btn = form.querySelector("[data-busy-label]");
+      if (!btn || btn.disabled) return;
+      btn.dataset.idleLabel = btn.textContent.trim();
+      btn.textContent = btn.dataset.busyLabel;
+      btn.classList.add("is-busy");
+      setTimeout(function () { btn.disabled = true; }, 0);
+      // Safety net: si la navegacion no ocurre (error, bloqueo), desbloquea.
+      setTimeout(function () {
+        if (!btn.isConnected) return;
+        btn.disabled = false;
+        btn.classList.remove("is-busy");
+        btn.textContent = btn.dataset.idleLabel;
+      }, 30000);
+    });
+
+    // Chunks view: toggle del detalle de fila (texto completo + metadata).
+    // El contenido ya esta en el DOM (siguiente <tr class="chunk-detail">),
+    // asi que es solo un show/hide. Click en la fila o Enter/Space cuando
+    // tiene focus.
+    (function () {
+      function toggle(row) {
+        const detail = row.nextElementSibling;
+        if (!detail || !detail.classList.contains("chunk-detail")) return;
+        const willOpen = detail.hidden;
+        detail.hidden = !willOpen;
+        row.classList.toggle("is-expanded", willOpen);
+        row.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      }
+      document.addEventListener("click", function (e) {
+        const row = e.target.closest("[data-chunk-row]");
+        if (!row) return;
+        // No interceptar clicks dentro de elementos interactivos.
+        if (e.target.closest("a, button, select, input, label")) return;
+        toggle(row);
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const row = e.target.closest("[data-chunk-row]");
+        if (!row || row !== e.target) return;
+        e.preventDefault();
+        toggle(row);
+      });
+    })();
+
+    // Health dot: poll /health y pinta el estado en el dot del logo.
+    // Cheap (cada 30s, no-store, sin endpoint adicional). Si la red falla
+    // o /health no responde, el dot pasa a 'down' (rojo).
+    (function () {
+      const brand = document.querySelector("a.brand[data-health-dot]");
+      if (!brand) return;
+
+      async function refresh() {
+        try {
+          const r = await fetch("/health", { cache: "no-store" });
+          if (r.ok) {
+            const body = await r.json();
+            brand.dataset.health = body.minio ? "ok" : "error";
+            brand.title = body.minio
+              ? "MinIO OK · " + body.bucket
+              : "MinIO error: " + (body.detail || "unknown");
+          } else {
+            brand.dataset.health = "error";
+            brand.title = "Health responded " + r.status;
+          }
+        } catch (e) {
+          brand.dataset.health = "down";
+          brand.title = "Cannot reach /health";
+        }
+      }
+
+      refresh();
+      setInterval(refresh, 30000);
+    })();
+  </script>
+</body>
+</html>

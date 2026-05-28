@@ -1,0 +1,66 @@
+{#
+  Files table partial. Used inline in detail.html and OOB-swapped from
+  the polling endpoint (admin marks `oob=True` in the partial response).
+#}
+<div id="files-table-wrap"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% if files %}
+  <table class="files-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th style="width:1%">Type</th>
+        <th style="width:1%;text-align:right">Pages</th>
+        <th style="width:1%;text-align:right">Size</th>
+        <th style="width:1%;white-space:nowrap">Modified</th>
+        <th style="width:1%;white-space:nowrap">Ingest</th>
+        <th style="width:1%"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in files %}
+      {% set st = f.content_type|mimestyle %}
+      <tr>
+        <td>
+          <a href="/collections/{{ c.id }}/files/{{ f.name }}">{{ f.name|stripext }}</a>
+        </td>
+        <td>
+          <span class="mime-tag" style="background:{{ st.bg }};color:{{ st.fg }}">
+            {{ st.label }}
+          </span>
+        </td>
+        <td style="text-align:right" class="muted tabular">
+          {{ f.pages if f.pages is not none else '—' }}
+        </td>
+        <td style="text-align:right" class="muted tabular">{{ f.size|humansize }}</td>
+        <td class="muted tabular">{{ f.last_modified|shortdate }}</td>
+        <td>
+          <span class="ingest-badge ingest-{{ f.ingest_status.value }}"
+                {% if f.ingest_error %}title="{{ f.ingest_error }}"{% endif %}>
+            {{ f.ingest_status.value }}
+          </span>
+        </td>
+        <td style="text-align:right;white-space:nowrap">
+          {% if f.ingest_status.value == 'failed' %}
+          <button class="btn btn-ghost btn-sm btn-retry"
+                  hx-post="/collections/{{ c.id }}/files/{{ f.name }}/ingest"
+                  hx-target="body"
+                  hx-push-url="/collections/{{ c.id }}">
+            Retry
+          </button>
+          {% endif %}
+          <button class="btn btn-ghost btn-sm btn-remove"
+                  hx-post="/collections/{{ c.id }}/files/{{ f.name }}/delete"
+                  hx-confirm="Delete '{{ f.name|stripext }}'?"
+                  hx-target="body"
+                  hx-push-url="/collections/{{ c.id }}">
+            Remove
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No files yet.</p>
+  {% endif %}
+</div>

@@ -1,0 +1,25 @@
+{# Tab bar para el detalle de coleccion.
+   Inputs (Jinja context):
+     c        Collection dataclass (necesita c.id)
+     current  string: 'overview' | 'chunks'
+   Spec en UI/DESIGN_PLAN.md §6.10.
+   Nota: data-label es necesario para reservar ancho de la variante bold
+   del activo (CSS .tab::before) y asi evitar layout shift al navegar.
+
+   El profile/settings vive como seccion plegable en Overview, no como
+   pestana — es configuracion, no destino de navegacion.
+#}
+<nav class="tabs" aria-label="Collection sections">
+  <a href="/collections/{{ c.id }}"
+     class="tab{% if current == 'overview' %} is-active{% endif %}"
+     data-label="Overview"
+     {% if current == 'overview' %}aria-current="page"{% endif %}>
+    Overview
+  </a>
+  <a href="/collections/{{ c.id }}/chunks"
+     class="tab{% if current == 'chunks' %} is-active{% endif %}"
+     data-label="Chunks"
+     {% if current == 'chunks' %}aria-current="page"{% endif %}>
+    Chunks
+  </a>
+</nav>

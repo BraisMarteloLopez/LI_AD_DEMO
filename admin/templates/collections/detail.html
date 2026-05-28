@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ c.name }} - LI_AD{% endblock %}
+{% block content %}
+{% include "collections/_header.html" %}
+
+{% with current="overview" %}{% include "collections/_tabs.html" %}{% endwith %}
+
+{% if ingest.total > 0 %}
+{% include "collections/_ingest_panel.html" %}
+{% endif %}
+
+{% include "collections/_profile_panel.html" %}
+
+<div class="files-head">
+  <h2>Files</h2>
+  <span class="muted">{{ files|length }} file{{ '' if files|length == 1 else 's' }} · {{ total_bytes|humansize }}</span>
+</div>
+
+<form method="post"
+      action="/collections/{{ c.id }}/files"
+      enctype="multipart/form-data"
+      class="stack"
+      style="margin-bottom:16px">
+  {% with id="add-dz",
+          name="files",
+          min=1,
+          submit_id="add-submit",
+          compact=true,
+          label="Drop PDFs here to add",
+          hint="click to browse — same filename overwrites" %}
+    {% include "_dropzone.html" %}
+  {% endwith %}
+  <div class="actions" style="margin-top:10px">
+    <button id="add-submit" class="btn btn-primary btn-sm" type="submit"
+            data-busy-label="Uploading…" disabled>
+      Upload PDFs
+    </button>
+  </div>
+</form>
+
+{% include "collections/_files_table.html" %}
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Collections - LI_AD{% endblock %}
+{% block content %}
+<h1>Collections</h1>
+<p><a class="btn btn-primary" href="/collections/new">+ New collection</a></p>
+
+{% if rows %}
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th style="width:1%">Type</th>
+      <th>Ingest</th>
+      <th style="width:1%;white-space:nowrap">Created</th>
+      <th>ID</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="/collections/{{ r.c.id }}">{{ r.c.name }}</a></td>
+      <td><span class="tag">{{ r.c.type.value }}</span></td>
+      <td>
+        {% if r.counts.total == 0 %}
+          <span class="muted">no files</span>
+        {% else %}
+          {% set dp = r.counts.done    / r.counts.total * 100 %}
+          {% set rp = r.counts.running / r.counts.total * 100 %}
+          {% set fp = r.counts.failed  / r.counts.total * 100 %}
+          <div class="ingest-summary">
+            <span class="muted tabular">{{ r.counts.done }}/{{ r.counts.total }}</span>
+            <div class="progress-bar progress-mini" role="progressbar"
+                 aria-valuenow="{{ r.counts.done }}"
+                 aria-valuemin="0" aria-valuemax="{{ r.counts.total }}">
+              <span class="progress-done"    style="width:{{ dp }}%"></span>
+              <span class="progress-running" style="width:{{ rp }}%"></span>
+              <span class="progress-failed"  style="width:{{ fp }}%"></span>
+            </div>
+            {% if r.counts.failed > 0 %}
+              <span class="ingest-badge ingest-failed">{{ r.counts.failed }} failed</span>
+            {% elif r.counts.running > 0 %}
+              <span class="ingest-badge ingest-running">{{ r.counts.running }} running</span>
+            {% elif r.counts.pending > 0 %}
+              <span class="ingest-badge ingest-pending">{{ r.counts.pending }} pending</span>
+            {% else %}
+              <span class="ingest-badge ingest-done">done</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      </td>
+      <td class="muted tabular">{{ r.c.created_at|shortdate }}</td>
+      <td class="muted">{{ r.c.id }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No collections yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{# Collection header reusable across detail/chunks/stats tabs.
+   Inputs (Jinja context):
+     c        Collection dataclass (id, name, type, state, created_at, updated_at)
+#}
+<div class="breadcrumbs">
+  <a href="/collections">Collections</a>
+  <span class="breadcrumbs-sep">/</span>
+  <span class="breadcrumbs-current">{{ c.name }}</span>
+</div>
+
+<div class="detail-head">
+  <div class="detail-head-main">
+    <h1>{{ c.name }}</h1>
+    <span class="tag">{{ c.type.value }}</span>
+    <span class="tag tag-state">{{ c.state.value }}</span>
+  </div>
+  <button class="btn btn-danger btn-sm"
+          hx-post="/collections/{{ c.id }}/delete"
+          hx-confirm="Delete '{{ c.name }}' and all its contents?"
+          hx-target="body"
+          hx-push-url="/collections">
+    Delete collection
+  </button>
+</div>
+
+<div class="detail-meta muted">
+  <code>{{ c.id }}</code>
+  <span>·</span>
+  <span>Created {{ c.created_at|shortdate }}</span>
+  <span>·</span>
+  <span>Updated {{ c.updated_at|shortdate }}</span>
+</div>

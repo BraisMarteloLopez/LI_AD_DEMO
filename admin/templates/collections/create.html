@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}New collection - LI_AD{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <a href="/collections">Collections</a>
+  <span class="breadcrumbs-sep">/</span>
+  <span class="breadcrumbs-current">New</span>
+</div>
+<h1>New collection</h1>
+
+<form method="post" action="/collections" enctype="multipart/form-data"
+      class="card stack" style="max-width:720px">
+  <div>
+    <label for="name">Name</label>
+    <input id="name" name="name" type="text" required maxlength="120" autofocus
+           placeholder="e.g. Onboarding handbook">
+  </div>
+
+  <div>
+    {% set only_type = types|length == 1 %}
+    <label for="type">Type</label>
+    <select id="type" name="type" required {% if only_type %}disabled{% endif %}>
+      {% for t in types %}
+      <option value="{{ t }}">{{ t }}</option>
+      {% endfor %}
+    </select>
+    {% if only_type %}
+      {# select disabled no envia value; el hidden replica la unica opcion #}
+      <input type="hidden" name="type" value="{{ types[0] }}">
+      <p class="hint">Más tipos llegarán en Fase 2.</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <label>PDFs <span class="muted" style="font-weight:400">(at least one)</span></label>
+    {% with id="create-dz",
+            name="files",
+            min=1,
+            submit_id="create-submit",
+            label="Drop PDFs here to start the collection",
+            hint="or click to browse — PDF only, multiple files allowed" %}
+      {% include "_dropzone.html" %}
+    {% endwith %}
+  </div>
+
+  <div class="actions">
+    <button id="create-submit" class="btn btn-primary" type="submit"
+            data-busy-label="Creating collection…" disabled>
+      Create collection
+    </button>
+    <a class="btn btn-ghost" href="/collections">Cancel</a>
+  </div>
+</form>
+{% endblock %}

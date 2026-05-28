@@ -1,0 +1,58 @@
+{#
+  Ingestion status panel. Polls itself every 3s while running > 0; when
+  running drops to 0, the swapped fragment no longer carries the hx-* attrs
+  and polling stops naturally.
+#}
+<section id="ingest-panel" class="ingest-panel card"
+         {% if ingest.running > 0 %}
+         hx-get="/collections/{{ c.id }}/_status"
+         hx-trigger="load delay:3s"
+         hx-swap="outerHTML"
+         {% endif %}>
+  <div class="ingest-panel-head">
+    <h2>Ingestion</h2>
+    {% if ingest.ingestable > 0 %}
+    <button class="btn btn-primary"
+            hx-post="/collections/{{ c.id }}/ingest"
+            hx-target="body"
+            hx-push-url="/collections/{{ c.id }}">
+      {% if ingest.failed > 0 and ingest.pending == 0 %}
+        Retry {{ ingest.failed }} failed
+      {% elif ingest.failed > 0 %}
+        Ingest {{ ingest.ingestable }} ({{ ingest.pending }} pending, {{ ingest.failed }} failed)
+      {% else %}
+        Ingest {{ ingest.pending }} pending
+      {% endif %}
+    </button>
+    {% elif ingest.running > 0 %}
+    <span class="muted">Processing {{ ingest.running }}…</span>
+    {% else %}
+    <span class="muted">All files processed</span>
+    {% endif %}
+  </div>
+
+  {% set done_pct = (ingest.done / ingest.total * 100) if ingest.total else 0 %}
+  {% set running_pct = (ingest.running / ingest.total * 100) if ingest.total else 0 %}
+  {% set failed_pct = (ingest.failed / ingest.total * 100) if ingest.total else 0 %}
+  <div class="progress-bar" role="progressbar"
+       aria-valuenow="{{ ingest.done }}" aria-valuemin="0" aria-valuemax="{{ ingest.total }}">
+    <span class="progress-done"    style="width: {{ done_pct }}%"></span>
+    <span class="progress-running" style="width: {{ running_pct }}%"></span>
+    <span class="progress-failed"  style="width: {{ failed_pct }}%"></span>
+  </div>
+
+  <div class="ingest-stats">
+    <span class="stat stat-done"    data-zero="{{ 'true' if ingest.done == 0 else 'false' }}">
+      <b>{{ ingest.done }}</b> done
+    </span>
+    <span class="stat stat-running" data-zero="{{ 'true' if ingest.running == 0 else 'false' }}">
+      <b>{{ ingest.running }}</b> running
+    </span>
+    <span class="stat stat-pending" data-zero="{{ 'true' if ingest.pending == 0 else 'false' }}">
+      <b>{{ ingest.pending }}</b> pending
+    </span>
+    <span class="stat stat-failed"  data-zero="{{ 'true' if ingest.failed == 0 else 'false' }}">
+      <b>{{ ingest.failed }}</b> failed
+    </span>
+  </div>
+</section>
