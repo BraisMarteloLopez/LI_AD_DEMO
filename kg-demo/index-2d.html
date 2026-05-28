@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>State-Sponsored Cyberwarfare — KG demo (2D)</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #11111b;
+      color: #cdd6f4;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+    }
+    #cy { position: absolute; inset: 0; }
+    header {
+      position: absolute;
+      top: 18px;
+      left: 22px;
+      z-index: 10;
+      pointer-events: none;
+      user-select: none;
+    }
+    header h1 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      color: #cdd6f4;
+    }
+    header p {
+      margin: 0;
+      font-size: 11px;
+      opacity: 0.55;
+      letter-spacing: 0.3px;
+    }
+    #legend {
+      position: absolute;
+      bottom: 22px;
+      left: 22px;
+      z-index: 10;
+      background: rgba(30, 30, 46, 0.82);
+      border: 1px solid #313244;
+      border-radius: 6px;
+      padding: 12px 14px;
+      min-width: 240px;
+      font-size: 11px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    #legend h2 {
+      margin: 0 0 8px 0;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #a6adc8;
+    }
+    #legend ul { list-style: none; padding: 0; margin: 0; }
+    #legend li {
+      display: flex;
+      align-items: center;
+      padding: 3px 0;
+      color: #cdd6f4;
+    }
+    #legend .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 9px;
+      flex: 0 0 auto;
+    }
+    #legend .count {
+      margin-left: auto;
+      opacity: 0.45;
+      font-variant-numeric: tabular-nums;
+    }
+    #toast {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      color: #a6adc8;
+      font-size: 12px;
+      letter-spacing: 0.4px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>State-Sponsored Cyberwarfare</h1>
+    <p>Synthetic knowledge graph &middot; 78 entities &middot; 120 relations &middot; 8 communities</p>
+  </header>
+
+  <div id="cy"></div>
+  <div id="toast">laying out graph&hellip;</div>
+
+  <aside id="legend" hidden>
+    <h2>Communities</h2>
+    <ul></ul>
+  </aside>
+
+  <script src="vendor/cytoscape.min.js"></script>
+  <script src="vendor/layout-base.js"></script>
+  <script src="vendor/cose-base.js"></script>
+  <script src="vendor/cytoscape-fcose.js"></script>
+  <script src="data/graph.js"></script>
+
+  <script>
+    "use strict";
+
+    const PALETTE = {
+      russia:         "#f38ba8",
+      china:          "#f9e2af",
+      north_korea:    "#fab387",
+      iran:           "#cba6f7",
+      western:        "#89b4fa",
+      critical_infra: "#eba0ac",
+      supply_chain:   "#a6e3a1",
+      spyware:        "#94e2d5",
+    };
+
+    function buildElements(data) {
+      const nodes = data.nodes.map(n => ({
+        group: "nodes",
+        data: {
+          id: n.id,
+          label: n.label,
+          type: n.type,
+          community: n.community,
+          community_label: n.community_label,
+          description: n.description,
+          degree: n.degree,
+          color: PALETTE[n.community] || "#9399b2",
+        },
+      }));
+      const edges = data.edges.map(e => ({
+        group: "edges",
+        data: {
+          id: e.source + "__" + e.target,
+          source: e.source,
+          target: e.target,
+          type: e.type,
+        },
+      }));
+      return [...nodes, ...edges];
+    }
+
+    function buildLegend(data) {
+      const counts = new Map();
+      data.nodes.forEach(n => {
+        if (!counts.has(n.community)) {
+          counts.set(n.community, { label: n.community_label, count: 0 });
+        }
+        counts.get(n.community).count += 1;
+      });
+      const entries = [...counts.entries()].sort((a, b) => b[1].count - a[1].count);
+      const ul = document.querySelector("#legend ul");
+      ul.innerHTML = "";
+      for (const [cid, info] of entries) {
+        const li = document.createElement("li");
+        const swatch = document.createElement("span");
+        swatch.className = "swatch";
+        swatch.style.background = PALETTE[cid] || "#9399b2";
+        const labelNode = document.createTextNode(info.label);
+        const count = document.createElement("span");
+        count.className = "count";
+        count.textContent = info.count;
+        li.appendChild(swatch);
+        li.appendChild(labelNode);
+        li.appendChild(count);
+        ul.appendChild(li);
+      }
+      document.querySelector("#legend").hidden = false;
+    }
+
+    const cy = cytoscape({
+      container: document.getElementById("cy"),
+      elements: buildElements(window.GRAPH_DATA),
+      minZoom: 0.2,
+      maxZoom: 4,
+      wheelSensitivity: 0.2,
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "data(color)",
+            "border-color": "#11111b",
+            "border-width": 1.5,
+            "label": "data(label)",
+            "color": "#cdd6f4",
+            "font-size": "10px",
+            "font-family": "system-ui, -apple-system, Segoe UI, sans-serif",
+            "text-valign": "center",
+            "text-halign": "right",
+            "text-margin-x": 6,
+            "text-opacity": 0,
+            "text-background-color": "#11111b",
+            "text-background-opacity": 0.85,
+            "text-background-padding": "2px",
+            "text-background-shape": "roundrectangle",
+            "width": "mapData(degree, 1, 16, 14, 56)",
+            "height": "mapData(degree, 1, 16, 14, 56)",
+          },
+        },
+        {
+          selector: "edge",
+          style: {
+            "width": 1.2,
+            "line-color": "#45475a",
+            "curve-style": "bezier",
+            "opacity": 0.5,
+          },
+        },
+      ],
+      layout: {
+        name: "fcose",
+        quality: "default",
+        randomize: true,
+        animate: false,
+        nodeRepulsion: 8000,
+        idealEdgeLength: 80,
+        edgeElasticity: 0.45,
+        nestingFactor: 0.1,
+        gravity: 0.25,
+        numIter: 2500,
+        tile: true,
+        packComponents: true,
+      },
+    });
+
+    cy.ready(() => {
+      const toast = document.getElementById("toast");
+      if (toast) toast.remove();
+      buildLegend(window.GRAPH_DATA);
+      cy.fit(undefined, 40);
+    });
+
+    cy.on("zoom", () => {
+      const visible = cy.zoom() > 1.2;
+      cy.batch(() => {
+        cy.style()
+          .selector("node")
+          .style({ "text-opacity": visible ? 1 : 0 })
+          .update();
+      });
+    });
+  </script>
+</body>
+</html>

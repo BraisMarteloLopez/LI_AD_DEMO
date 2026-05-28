@@ -578,8 +578,17 @@ def main() -> None:
     louvain_summary = summarise_louvain(G, louvain_groups, community_of_node)
 
     payload = to_json_payload(G, node_meta)
+    # Canonical JSON for inspection / tooling.
     (HERE / "graph.json").write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    # JS module for the HTML demo. file:// + fetch() does not work in Chrome,
+    # so we expose the payload as a global instead.
+    (HERE / "graph.js").write_text(
+        "window.GRAPH_DATA = "
+        + json.dumps(payload, indent=2, ensure_ascii=False)
+        + ";\n",
         encoding="utf-8",
     )
 
